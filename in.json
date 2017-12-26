@@ -1,0 +1,9 @@
+{
+  "params": {
+    "channel": "develop",
+    "text": "some-repo"
+  },
+  "source": {
+    "token": "test"
+  }
+}
