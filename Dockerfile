@@ -1,7 +1,6 @@
 FROM watawuwu/rust AS rust-builder
 
 ADD Makefile .
-ADD *mk .
 ADD Cargo.toml .
 ADD Cargo.lock .
 
