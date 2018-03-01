@@ -1,4 +1,4 @@
-FROM watawuwu/rust:stable AS rust-builder
+FROM watawuwu/rust AS rust-builder
 
 ADD Makefile .
 ADD *mk .
@@ -18,13 +18,11 @@ ADD src src
 
 RUN make build BUILD_OPTIONS=--release
 
-FROM watawuwu/openssl:1.0.2
+FROM watawuwu/openssl:latest
 
-RUN mkdir -p /opt/assets
-COPY --from=rust-builder /root/src/target/x86_64-unknown-linux-musl/release/in /opt/assets
-COPY --from=rust-builder /root/src/target/x86_64-unknown-linux-musl/release/out /opt/assets
-COPY --from=rust-builder /root/src/target/x86_64-unknown-linux-musl/release/check /opt/assets
+RUN mkdir -p /opt/resource
 
-
-
-
+ENV RUST_LOG=info
+COPY --from=rust-builder /app/target/x86_64-unknown-linux-musl/release/in /opt/resource
+COPY --from=rust-builder /app/target/x86_64-unknown-linux-musl/release/out /opt/resource
+COPY --from=rust-builder /app/target/x86_64-unknown-linux-musl/release/check /opt/resource

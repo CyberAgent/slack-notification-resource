@@ -20,19 +20,18 @@ LOG             := $(name)=$(LOG_LEVEL)
 INPUT           :=
 RUN_TYPE        := in # (in|out|Chuck)
 IMAGE_REPO      := watawuwu/slack-notification-resource
-PUSH_TAG        := latest
 
 # Task
 #===============================================================
 deps:
 	rustup update
-	cargo +nightly install --force rustfmt-nightly
+	rustup component add rustfmt-preview
 	cargo +nightly install --force clippy
 
 test: .target
 	RUST_LOG=$(LOG) \
+	RUST_BACKTRACE=1 \
 	cargo $(CARGO_OPTIONS) test \
-	  --lib \
 	  $(BUILD_OPTIONS) \
 	  --target $(target) \
 	  -- --nocapture $(ARGS)
@@ -47,9 +46,11 @@ build: .target
 	cargo $(CARGO_OPTIONS) build \
 	  $(BUILD_OPTIONS) \
 	  --target $(target)
-format:
-	cargo +nightly fmt
+fmt:
+	cargo +stable fmt
 	cargo +nightly clippy
+check:
+	cargo $(CARGO_OPTIONS) check
 clean:
 	cargo $(CARGO_OPTIONS) clean
 update:
@@ -59,6 +60,8 @@ update:
 
 # Docker for local development
 #-------------------------------
+## Ship the Docker image
+docker-integration: docker-build docker-push docker-clean
 ## Building docker image.
 docker-build:
 	$(eval tag := $(shell date +'%Y-%m-%dT%H%M%S'))
@@ -66,7 +69,8 @@ docker-build:
 	docker tag $(IMAGE_REPO):$(tag) $(IMAGE_REPO):latest
 ## Push docker image.
 docker-push: .image-tag
-	docker push $(IMAGE_REPO):$(PUSH_TAG)
+	docker push $(IMAGE_REPO):latest
+	docker push $(IMAGE_REPO):$(tag)
 ## Remove the image for two generations, delete the remaining images.
 docker-clean:
 	docker images --format "{{.Repository}}\t{{.CreatedAt}}\t{{.Tag}}" $(IMAGE_REPO) | \
@@ -91,6 +95,11 @@ ifeq ($(OS),Linux)
 endif
 	$(eval target_dir = target/$(target)/release)
 
+.image-tag:
+	$(eval tag := $(shell docker images --format "{{.ID}}\t{{.CreatedAt}}\t{{.Tag}}" $(IMAGE_REPO) | \
+	  sort -r -k2,3 | \
+	  awk -F"\t" '$$3 != "latest" {print $$3}' | \
+	  head -n 1 ))
 
 # Override task
 #===============================================================

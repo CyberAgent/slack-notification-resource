@@ -47,3 +47,5 @@ tmp
 .thread_ts
 
 tests/assets
+
+.git
